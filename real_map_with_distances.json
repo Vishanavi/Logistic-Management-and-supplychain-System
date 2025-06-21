@@ -1,0 +1,153 @@
+{
+  "nodes": [
+    {
+      "id": "factory",
+      "name": "Clock Tower Factory",
+      "lat": 30.3256,
+      "lon": 78.0437
+    },
+    {
+      "id": "warehouse_clement",
+      "name": "Clement Town Warehouse",
+      "lat": 30.2736,
+      "lon": 78.0322
+    },
+    {
+      "id": "warehouse_prem",
+      "name": "Prem Nagar Warehouse",
+      "lat": 30.3076,
+      "lon": 77.9632
+    },
+    {
+      "id": "warehouse_raipur",
+      "name": "Raipur Warehouse",
+      "lat": 30.3115,
+      "lon": 78.0806
+    },
+    {
+      "id": "retail_store_1",
+      "name": "Paltan Bazaar Store",
+      "lat": 30.325,
+      "lon": 78.043
+    },
+    {
+      "id": "retail_store_2",
+      "name": "Rajpur Road Store",
+      "lat": 30.3561,
+      "lon": 78.0807
+    },
+    {
+      "id": "isbt",
+      "name": "ISBT",
+      "lat": 30.2707,
+      "lon": 78.0081
+    }
+  ],
+  "edges": [
+    {
+      "from": "factory",
+      "to": "warehouse_clement",
+      "distance": 7.17
+    },
+    {
+      "from": "factory",
+      "to": "warehouse_prem",
+      "distance": 14.57
+    },
+    {
+      "from": "factory",
+      "to": "warehouse_raipur",
+      "distance": 5.05
+    },
+    {
+      "from": "factory",
+      "to": "retail_store_1",
+      "distance": 0.12
+    },
+    {
+      "from": "factory",
+      "to": "retail_store_2",
+      "distance": null
+    },
+    {
+      "from": "factory",
+      "to": "isbt",
+      "distance": null
+    },
+    {
+      "from": "warehouse_clement",
+      "to": "warehouse_prem",
+      "distance": 12.5
+    },
+    {
+      "from": "warehouse_clement",
+      "to": "warehouse_raipur",
+      "distance": 10.13
+    },
+    {
+      "from": "warehouse_clement",
+      "to": "retail_store_1",
+      "distance": 7.65
+    },
+    {
+      "from": "warehouse_clement",
+      "to": "retail_store_2",
+      "distance": 12.37
+    },
+    {
+      "from": "warehouse_clement",
+      "to": "isbt",
+      "distance": 4.31
+    },
+    {
+      "from": "warehouse_prem",
+      "to": "warehouse_raipur",
+      "distance": 17.5
+    },
+    {
+      "from": "warehouse_prem",
+      "to": "retail_store_1",
+      "distance": 15.03
+    },
+    {
+      "from": "warehouse_prem",
+      "to": "retail_store_2",
+      "distance": 19.75
+    },
+    {
+      "from": "warehouse_prem",
+      "to": "isbt",
+      "distance": null
+    },
+    {
+      "from": "warehouse_raipur",
+      "to": "retail_store_1",
+      "distance": 5.37
+    },
+    {
+      "from": "warehouse_raipur",
+      "to": "retail_store_2",
+      "distance": 7.21
+    },
+    {
+      "from": "warehouse_raipur",
+      "to": "isbt",
+      "distance": 14.16
+    },
+    {
+      "from": "retail_store_1",
+      "to": "retail_store_2",
+      "distance": 6.94
+    },
+    {
+      "from": "retail_store_1",
+      "to": "isbt",
+      "distance": 11.08
+    },
+    {
+      "from": "retail_store_2",
+      "to": "isbt",
+      "distance": 16.4
+    }
+  ]
+}

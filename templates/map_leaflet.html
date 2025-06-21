@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Dehradun Logistics Map{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 1000px; margin: 2rem auto;">
+    <h2>🗺️ Interactive Dehradun Logistics Network Map</h2>
+    <p style="color: #666; margin-bottom: 1rem;">This map uses OpenStreetMap and Leaflet.js for real-world visualization. Nodes and routes are plotted using actual coordinates and road distances.</p>
+    <div id="leaflet-map" style="width: 100%; height: 600px; border-radius: 10px; box-shadow: 0 2px 8px #0001;"></div>
+    <div style="margin-top: 2rem;">
+        <b>Legend:</b>
+        <span style="display:inline-block;width:18px;height:18px;background:#3498db;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Factory
+        <span style="display:inline-block;width:18px;height:18px;background:#27ae60;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Warehouse
+        <span style="display:inline-block;width:18px;height:18px;background:#9b59b6;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Store/Customer
+        <span style="display:inline-block;width:18px;height:18px;background:#e67e22;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>ISBT
+    </div>
+</div>
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Data from Flask
+    const nodes = {{ nodes|tojson }};
+    const edges = {{ edges|tojson }};
+    // Center on Dehradun
+    const map = L.map('leaflet-map').setView([30.3256, 78.0437], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    // Draw edges (routes)
+    edges.forEach(edge => {
+        const from = nodes.find(n => n.id === edge.from);
+        const to = nodes.find(n => n.id === edge.to);
+        if (from && to) {
+            L.polyline([
+                [from.lat, from.lon],
+                [to.lat, to.lon]
+            ], {color: '#888', weight: 4, opacity: 0.7}).addTo(map)
+            .bindTooltip(edge.distance ? `${edge.distance} km` : '', {permanent: false});
+        }
+    });
+    // Draw nodes (locations)
+    nodes.forEach(node => {
+        let color = '#9b59b6';
+        if (node.id.includes('factory')) color = '#3498db';
+        else if (node.id.includes('warehouse')) color = '#27ae60';
+        else if (node.id.includes('isbt')) color = '#e67e22';
+        const marker = L.circleMarker([node.lat, node.lon], {
+            radius: 12,
+            fillColor: color,
+            color: '#222',
+            weight: 2,
+            fillOpacity: 0.95
+        }).addTo(map);
+        marker.bindPopup(`<b>${node.name}</b>`);
+    });
+</script>
+{% endblock %} 

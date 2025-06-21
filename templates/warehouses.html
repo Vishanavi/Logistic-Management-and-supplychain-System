@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Warehouses Dashboard - Logistics Management System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🏢 Warehouses Dashboard</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Monitor inventory levels across all warehouses and manage product dispatch to customers.
+    </p>
+</div>
+
+<div class="warehouse-grid">
+    {% for warehouse in warehouses %}
+        <div class="warehouse-card">
+            <h3>{{ warehouse.name }}</h3>
+            <p style="color: #666; margin-bottom: 1rem;">
+                <strong>Location:</strong> {{ warehouse.location }}<br>
+                <strong>Capacity:</strong> {{ warehouse.capacity }} units
+            </p>
+            
+            <h4 style="color: #2c3e50; margin-bottom: 1rem;">Current Inventory</h4>
+            {% if inventory[warehouse.name] %}
+                <table class="table" style="font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in inventory[warehouse.name] %}
+                            {% if item.quantity > 0 %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>
+                                        <span style="font-weight: bold; color: {% if item.quantity > 10 %}#27ae60{% elif item.quantity > 5 %}#f39c12{% else %}#e74c3c{% endif %};">
+                                            {{ item.quantity }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button onclick="showDispatchForm('{{ warehouse.id }}', '{{ warehouse.name }}', '{{ item.product_id }}', '{{ item.product.name }}', {{ item.quantity }})" 
+                                                class="btn btn-success" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">
+                                            Dispatch
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p style="text-align: center; color: #666; padding: 1rem;">
+                    No inventory data available.
+                </p>
+            {% endif %}
+        </div>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h2>🚚 Recent Deliveries</h2>
+    {% if deliveries %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>From Warehouse</th>
+                    <th>Customer Address</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for delivery in deliveries %}
+                    <tr>
+                        <td>{{ delivery.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ delivery.product_name }}</td>
+                        <td>{{ delivery.quantity }}</td>
+                        <td>{{ delivery.warehouse_name }}</td>
+                        <td>{{ delivery.customer_address[:50] if delivery.customer_address else 'N/A' }}{% if delivery.customer_address and delivery.customer_address|length > 50 %}...{% endif %}</td>
+                        <td>
+                            <span style="padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.875rem; 
+                                       background-color: {% if delivery.status == 'processing' %}#fff3cd{% elif delivery.status == 'in_transit' %}#cce5ff{% else %}#d4edda{% endif %};
+                                       color: {% if delivery.status == 'processing' %}#856404{% elif delivery.status == 'in_transit' %}#004085{% else %}#155724{% endif %};">
+                                {{ delivery.status.replace('_', ' ').title() }}
+                            </span>
+                            {% if delivery.status in ['pending', 'processing', 'in_transit'] %}
+                                <form action="{{ url_for('complete_delivery', order_id=delivery.id) }}" method="POST" style="display:inline; margin-left: 0.5rem;">
+                                    <button type="submit" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Mark as Complete</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #666; padding: 2rem;">
+            No recent deliveries found.
+        </p>
+    {% endif %}
+</div>
+
+<!-- Dispatch Modal -->
+<div id="dispatchModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                                background-color: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                background: white; padding: 2rem; border-radius: 10px; min-width: 400px;">
+        <h3>Dispatch from Warehouse</h3>
+        <form action="{{ url_for('dispatch_from_warehouse') }}" method="POST">
+            <input type="hidden" id="warehouse_id" name="warehouse_id">
+            <input type="hidden" id="product_id" name="product_id">
+            
+            <div class="form-group">
+                <label>Warehouse:</label>
+                <input type="text" id="warehouse_name" class="form-control" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label>Product:</label>
+                <input type="text" id="product_name" class="form-control" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1" required>
+                <small style="color: #666;">Available: <span id="available_quantity"></span></small>
+            </div>
+            
+            <div class="form-group">
+                <label for="customer_address">Customer Address:</label>
+                <textarea name="customer_address" id="customer_address" class="form-control" rows="3" 
+                          placeholder="Enter customer delivery address..." required></textarea>
+            </div>
+            
+            <div style="text-align: right; margin-top: 2rem;">
+                <button type="button" onclick="hideDispatchForm()" class="btn btn-secondary" style="margin-right: 1rem;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-success">
+                    Dispatch Product
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function showDispatchForm(warehouseId, warehouseName, productId, productName, availableQuantity) {
+        document.getElementById('warehouse_id').value = warehouseId;
+        document.getElementById('warehouse_name').value = warehouseName;
+        document.getElementById('product_id').value = productId;
+        document.getElementById('product_name').value = productName;
+        document.getElementById('available_quantity').textContent = availableQuantity;
+        document.getElementById('quantity').max = availableQuantity;
+        document.getElementById('dispatchModal').style.display = 'block';
+    }
+    
+    function hideDispatchForm() {
+        document.getElementById('dispatchModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('dispatchModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideDispatchForm();
+        }
+    });
+</script>
+{% endblock %} 

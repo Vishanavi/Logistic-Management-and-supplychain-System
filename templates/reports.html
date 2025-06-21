@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Logistics Management System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📊 Reports & Analytics</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Comprehensive overview of inventory levels, delivery performance, and routing analytics.
+    </p>
+</div>
+
+<div class="card">
+    <h2>📦 Inventory Summary</h2>
+    {% if inventory_summary %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Total Products</th>
+                    <th>Total Quantity</th>
+                    <th>Average Stock Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for summary in inventory_summary %}
+                    <tr>
+                        <td>
+                            <strong>{{ summary.location }}</strong>
+                        </td>
+                        <td>{{ summary.total_products }}</td>
+                        <td>
+                            <span style="font-weight: bold; color: {% if summary.total_quantity > 100 %}#27ae60{% elif summary.total_quantity > 50 %}#f39c12{% else %}#e74c3c{% endif %};">
+                                {{ summary.total_quantity or 0 }}
+                            </span>
+                        </td>
+                        <td>{{ "%.1f"|format((summary.total_quantity or 0) / summary.total_products) if summary.total_products > 0 else 0 }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #666; padding: 2rem;">
+            No inventory data available. Please initialize the database first.
+        </p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>🚚 Delivery Status Summary</h2>
+    {% if delivery_summary %}
+        <div class="grid">
+            {% for summary in delivery_summary %}
+                <div class="stats-card">
+                    <h3>{{ summary.count }}</h3>
+                    <p>{{ summary.status.replace('_', ' ').title() }} Deliveries</p>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <table class="table" style="margin-top: 2rem;">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Count</th>
+                    <th>Percentage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set total_deliveries = delivery_summary|sum(attribute='count') %}
+                {% for summary in delivery_summary %}
+                    <tr>
+                        <td>
+                            <span style="padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.875rem; 
+                                       background-color: {% if summary.status == 'processing' %}#fff3cd{% elif summary.status == 'in_transit' %}#cce5ff{% elif summary.status == 'delivered' %}#d4edda{% else %}#f8d7da{% endif %};
+                                       color: {% if summary.status == 'processing' %}#856404{% elif summary.status == 'in_transit' %}#004085{% elif summary.status == 'delivered' %}#155724{% else %}#721c24{% endif %};">
+                                {{ summary.status.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td>{{ summary.count }}</td>
+                        <td>{{ "%.1f"|format((summary.count / total_deliveries) * 100) if total_deliveries > 0 else 0 }}%</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #666; padding: 2rem;">
+            No delivery data available.
+        </p>
+    {% endif %}
+</div>
+
+<style>
+    .metric-highlight {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-highlight h3 {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 0.5rem;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %} 

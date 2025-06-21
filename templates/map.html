@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Logistics Network Map - Dehradun{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 1000px; margin: 2rem auto;">
+    <h2>🗺️ Dehradun Logistics Network Map</h2>
+    <p style="color: #666; margin-bottom: 1rem;">All locations and routes are plotted using real coordinates and road distances.</p>
+    {% set width = 800 %}
+    {% set height = 600 %}
+    {% macro scale_x(lon) %}{{ ((lon - min_lon) / (max_lon - min_lon) * (width - 80) + 40) | round(2) }}{% endmacro %}
+    {% macro scale_y(lat) %}{{ (height - ((lat - min_lat) / (max_lat - min_lat) * (height - 80) + 40)) | round(2) }}{% endmacro %}
+    <div style="overflow-x: auto;">
+    <svg width="{{ width }}" height="{{ height }}" style="background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 8px #0001;">
+        <!-- Draw edges -->
+        {% for edge in edges %}
+            {% set from_node = (nodes | selectattr('id', 'equalto', edge['from']) | list)[0] if (nodes | selectattr('id', 'equalto', edge['from']) | list) else None %}
+            {% set to_node = (nodes | selectattr('id', 'equalto', edge['to']) | list)[0] if (nodes | selectattr('id', 'equalto', edge['to']) | list) else None %}
+            {% if from_node and to_node %}
+                <line x1="{{ scale_x(from_node.lon) }}" y1="{{ scale_y(from_node.lat) }}"
+                      x2="{{ scale_x(to_node.lon) }}" y2="{{ scale_y(to_node.lat) }}"
+                      stroke="#888" stroke-width="2" />
+                {% if edge.distance %}
+                    <text x="{{ (scale_x(from_node.lon) | float + scale_x(to_node.lon) | float) / 2 }}"
+                          y="{{ (scale_y(from_node.lat) | float + scale_y(to_node.lat) | float) / 2 - 5 }}"
+                          font-size="12" fill="#555" text-anchor="middle">{{ edge.distance }} km</text>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        <!-- Draw nodes -->
+        {% for node in nodes %}
+            <circle cx="{{ scale_x(node.lon) }}" cy="{{ scale_y(node.lat) }}" r="12"
+                    fill="{% if 'factory' in node.id %}#3498db{% elif 'warehouse' in node.id %}#27ae60{% elif 'isbt' in node.id %}#e67e22{% else %}#9b59b6{% endif %}" stroke="#222" stroke-width="2" />
+            <text x="{{ scale_x(node.lon) }}" y="{{ (scale_y(node.lat) | float + 28) }}" font-size="14" fill="#222" text-anchor="middle">{{ node.name }}</text>
+        {% endfor %}
+    </svg>
+    </div>
+    <div style="margin-top: 2rem;">
+        <b>Legend:</b>
+        <span style="display:inline-block;width:18px;height:18px;background:#3498db;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Factory
+        <span style="display:inline-block;width:18px;height:18px;background:#27ae60;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Warehouse
+        <span style="display:inline-block;width:18px;height:18px;background:#9b59b6;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Store/Customer
+        <span style="display:inline-block;width:18px;height:18px;background:#e67e22;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>ISBT
+    </div>
+</div>
+{% endblock %} 

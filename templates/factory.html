@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Factory Dashboard - Logistics Management System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>🏭 Factory Dashboard</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Monitor factory inventory and manage shipments to warehouses. Track production levels and coordinate distribution.
+    </p>
+</div>
+
+<div class="card">
+    <h2>📦 Factory Inventory</h2>
+    <div style="text-align: right; margin-bottom: 1rem;">
+        <a href="{{ url_for('add_product') }}" class="btn btn-primary">+ Add New Product</a>
+    </div>
+    {% if inventory %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Product ID</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Available Quantity</th>
+                    <th>Weight (kg)</th>
+                    <th>Price (₹)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory %}
+                    <tr>
+                        <td>{{ item.product_id }}</td>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.product.category }}</td>
+                        <td>
+                            <span style="font-weight: bold; color: {% if item.quantity > 50 %}#27ae60{% elif item.quantity > 20 %}#f39c12{% else %}#e74c3c{% endif %};">
+                                {{ item.quantity }}
+                            </span>
+                        </td>
+                        <td>{{ item.product.weight }}</td>
+                        <td>₹{{ "%.2f"|format(item.product.price) }}</td>
+                        <td>
+                            <button onclick="showShipmentForm('{{ item.product_id }}', '{{ item.product.name }}')" class="btn btn-success">
+                                Ship to Warehouse
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #666; padding: 2rem;">
+            No inventory data available. Please initialize the database first.
+        </p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>🚚 Recent Shipments</h2>
+    {% if shipments %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Destination</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shipment in shipments %}
+                    <tr>
+                        <td>{{ shipment.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ shipment.product_name }}</td>
+                        <td>{{ shipment.quantity }}</td>
+                        <td>{{ shipment.warehouse_name }}</td>
+                        <td>
+                            <span style="padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.875rem; 
+                                       background-color: {% if shipment.status == 'in_transit' %}#fff3cd{% else %}#d4edda{% endif %};
+                                       color: {% if shipment.status == 'in_transit' %}#856404{% else %}#155724{% endif %};">
+                                {{ shipment.status.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #666; padding: 2rem;">
+            No recent shipments found.
+        </p>
+    {% endif %}
+</div>
+
+<!-- Shipment Modal -->
+<div id="shipmentModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                                background-color: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                background: white; padding: 2rem; border-radius: 10px; min-width: 400px;">
+        <h3>Ship to Warehouse</h3>
+        <form action="{{ url_for('ship_to_warehouse') }}" method="POST">
+            <input type="hidden" id="product_id" name="product_id">
+            
+            <div class="form-group">
+                <label>Product:</label>
+                <input type="text" id="product_name" class="form-control" readonly>
+            </div>
+            
+            <div class="form-group">
+                <label for="warehouse_id">Select Warehouse:</label>
+                <select name="warehouse_id" id="warehouse_id" class="form-control" required>
+                    <option value="">Choose a warehouse...</option>
+                    <option value="1">Clement Town Warehouse (Clement Town, Dehradun)</option>
+                    <option value="2">Prem Nagar Warehouse (Prem Nagar, Dehradun)</option>
+                    <option value="3">Raipur Warehouse (Raipur, Dehradun)</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="quantity">Quantity:</label>
+                <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1" required>
+            </div>
+            
+            <div style="text-align: right; margin-top: 2rem;">
+                <button type="button" onclick="hideShipmentForm()" class="btn btn-secondary" style="margin-right: 1rem;">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-success">
+                    Ship Product
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 1000;
+    }
+    
+    .modal-content {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        min-width: 400px;
+        max-width: 90%;
+    }
+</style>
+
+<script>
+    function showShipmentForm(productId, productName) {
+        document.getElementById('product_id').value = productId;
+        document.getElementById('product_name').value = productName;
+        document.getElementById('shipmentModal').style.display = 'block';
+    }
+    
+    function hideShipmentForm() {
+        document.getElementById('shipmentModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('shipmentModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            hideShipmentForm();
+        }
+    });
+</script>
+{% endblock %} 

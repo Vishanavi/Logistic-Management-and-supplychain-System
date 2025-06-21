@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Product - Logistics Management System{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto;">
+    <h2>➕ Add New Product</h2>
+    <form action="{{ url_for('add_product') }}" method="POST">
+        <div class="form-group">
+            <label for="name">Product Name:</label>
+            <input type="text" name="name" id="name" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <input type="text" name="category" id="category" class="form-control" value="General" required>
+        </div>
+        <div class="form-group">
+            <label for="weight">Weight (kg):</label>
+            <input type="number" name="weight" id="weight" class="form-control" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="price">Price (₹):</label>
+            <input type="number" name="price" id="price" class="form-control" step="0.01" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="quantity">Initial Quantity:</label>
+            <input type="number" name="quantity" id="quantity" class="form-control" min="0" required>
+        </div>
+        <div style="text-align: right; margin-top: 2rem;">
+            <a href="{{ url_for('factory') }}" class="btn btn-secondary" style="margin-right: 1rem;">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Product</button>
+        </div>
+    </form>
+</div>
+{% endblock %} 

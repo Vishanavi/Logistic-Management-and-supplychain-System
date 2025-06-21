@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Delivery Planner - Logistics Management System{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 900px; margin: 2rem auto;">
+    <h2>🚚 Batch Delivery Planner</h2>
+    <form method="GET" action="{{ url_for('batch_delivery') }}" style="margin-bottom: 2rem;">
+        <label for="warehouse_id"><b>Select Warehouse:</b></label>
+        <select name="warehouse_id" id="warehouse_id" class="form-control" style="width: 300px; display: inline-block;" required onchange="this.form.submit()">
+            <option value="">Choose a warehouse...</option>
+            {% for w in warehouses %}
+                <option value="{{ w.id }}" {% if selected_warehouse_id and w.id|string == selected_warehouse_id|string %}selected{% endif %}>{{ w.name }} ({{ w.location }})</option>
+            {% endfor %}
+        </select>
+    </form>
+    {% if orders %}
+        <h3>Pending Delivery Orders</h3>
+        <form method="POST" action="{{ url_for('batch_delivery') }}">
+            <input type="hidden" name="warehouse_id" value="{{ selected_warehouse_id }}">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Customer Address (Node)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders %}
+                    <tr>
+                        <td>{{ o.id }}</td>
+                        <td>{{ o.product_name }}</td>
+                        <td>{{ o.quantity }}</td>
+                        <td>{{ o.customer_address }}</td>
+                        <td>{{ o.status }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div style="text-align: right; margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary">Plan Route</button>
+            </div>
+        </form>
+    {% elif selected_warehouse_id %}
+        <p style="color: #888;">No pending delivery orders for this warehouse.</p>
+    {% endif %}
+
+    {% if route_result %}
+        <div style="margin-top: 2rem;">
+            <h3>🗺️ Planned Delivery Route</h3>
+            <ol>
+                {% for step in route_result.order %}
+                <li>
+                    <b>{{ step.from }}</b> → <b>{{ step.to }}</b> <br>
+                    <span style="color: #888;">Distance: {{ '%.2f'|format(step.distance) }} km</span><br>
+                    <span style="color: #888;">Path: {{ step.path|join(' → ') }}</span>
+                </li>
+                {% endfor %}
+            </ol>
+            <p><b>Total Distance:</b> {{ '%.2f'|format(route_result.total_distance) }} km</p>
+        </div>
+        <div style="margin-top: 2rem; text-align: center;">
+            <!-- Removed: <a href="{{ url_for('map_leaflet_view') }}" target="_blank" class="btn btn-success" style="font-size: 1.1em;">View Interactive Map</a> -->
+            <!-- Removed: <p style="color: #888; margin-top: 0.5rem;">Visualize the logistics network and routes on the real Dehradun map.</p> -->
+        </div>
+        <!-- Embedded Interactive Map for Batch Delivery Route -->
+        <div style="margin-top: 2rem;">
+            <h4>Interactive Route Map</h4>
+            <div id="leaflet-map" style="width: 100%; height: 500px; border-radius: 10px; box-shadow: 0 2px 8px #0001;"></div>
+            <div style="margin-top: 1rem;">
+                <b>Legend:</b>
+                <span style="display:inline-block;width:18px;height:18px;background:#3498db;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Factory
+                <span style="display:inline-block;width:18px;height:18px;background:#27ae60;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Warehouse
+                <span style="display:inline-block;width:18px;height:18px;background:#9b59b6;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>Store/Customer
+                <span style="display:inline-block;width:18px;height:18px;background:#e67e22;border-radius:50%;margin:0 6px 0 16px;vertical-align:middle;"></span>ISBT
+            </div>
+        </div>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+            const nodes = {{ nodes|tojson }};
+            const edges = {{ edges|tojson }};
+            const routePathEdges = {{ route_path_edges|tojson }};
+            // Center on Dehradun
+            const map = L.map('leaflet-map').setView([30.3256, 78.0437], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            // Draw all edges (network)
+            edges.forEach(edge => {
+                const from = nodes.find(n => n.id === edge.from);
+                const to = nodes.find(n => n.id === edge.to);
+                if (from && to) {
+                    L.polyline([
+                        [from.lat, from.lon],
+                        [to.lat, to.lon]
+                    ], {color: '#bbb', weight: 3, opacity: 0.5}).addTo(map);
+                }
+            });
+            // Draw route path edges (highlighted)
+            routePathEdges.forEach(([fromName, toName]) => {
+                const from = nodes.find(n => n.name === fromName);
+                const to = nodes.find(n => n.name === toName);
+                if (from && to) {
+                    L.polyline([
+                        [from.lat, from.lon],
+                        [to.lat, to.lon]
+                    ], {color: '#e74c3c', weight: 6, opacity: 0.9}).addTo(map);
+                }
+            });
+            // Draw nodes (locations)
+            nodes.forEach(node => {
+                let color = '#9b59b6';
+                if (node.id && node.id.includes('factory')) color = '#3498db';
+                else if (node.id && node.id.includes('warehouse')) color = '#27ae60';
+                else if (node.id && node.id.includes('isbt')) color = '#e67e22';
+                const marker = L.circleMarker([node.lat, node.lon], {
+                    radius: 12,
+                    fillColor: color,
+                    color: '#222',
+                    weight: 2,
+                    fillOpacity: 0.95
+                }).addTo(map);
+                marker.bindPopup(`<b>${node.name}</b>`);
+            });
+        </script>
+    {% endif %}
+</div>
+{% endblock %} 

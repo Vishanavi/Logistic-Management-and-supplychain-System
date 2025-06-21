@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Logistics Management System{% endblock %}
+
+{% block content %}
+{% if not current_user.is_authenticated %}
+<div class="card" style="max-width: 500px; margin: 2rem auto; text-align: center;">
+    <h2>Welcome!</h2>
+    <p>Please <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a> or <a href="{{ url_for('signup') }}" class="btn btn-success">Signup</a> to access the Dehradun Logistics & Supply Chain Management System.</p>
+</div>
+{% else %}
+<div class="card">
+    <h1 style="text-align: center; color: #2c3e50; margin-bottom: 2rem;">🚚 Dehradun Logistics & Supply Chain Management System</h1>
+    
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <p style="font-size: 1.2rem; color: #666; max-width: 800px; margin: 0 auto;">
+            Welcome to our comprehensive logistics management platform for Dehradun region. This system provides end-to-end visibility 
+            and control over your supply chain operations, from Clock Tower factory to warehouses across Dehradun.
+        </p>
+    </div>
+
+    <div class="grid">
+        <div class="stats-card">
+            <h3>🏭 Factory</h3>
+            <p>Monitor production at Clock Tower Dehradun and manage shipments to warehouses</p>
+            <a href="{{ url_for('factory') }}" class="btn" style="margin-top: 1rem;">Factory Dashboard</a>
+        </div>
+
+        <div class="stats-card">
+            <h3>🏢 Warehouses</h3>
+            <p>Track inventory levels at Clement Town, Prem Nagar, and Raipur warehouses</p>
+            <a href="{{ url_for('warehouses') }}" class="btn" style="margin-top: 1rem;">Warehouse Dashboard</a>
+        </div>
+
+        <div class="stats-card">
+            <h3>📦 Orders</h3>
+            <p>Process customer orders and manage fulfillment across Dehradun</p>
+            <a href="{{ url_for('orders') }}" class="btn" style="margin-top: 1rem;">Order Management</a>
+        </div>
+
+        <div class="stats-card">
+            <h3>📊 Reports</h3>
+            <p>View analytics and performance metrics for Dehradun operations</p>
+            <a href="{{ url_for('reports') }}" class="btn" style="margin-top: 1rem;">View Reports</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Quick Start</h2>
+    <div style="text-align: center;">
+        <p style="margin-bottom: 2rem; color: #666;">
+            Get started by initializing the database with sample data, then explore the different modules for Dehradun logistics management.
+        </p>
+        <a href="{{ url_for('init_db') }}" class="btn btn-success">Initialize Database</a>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

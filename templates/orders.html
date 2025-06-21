@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}Order Management - Logistics Management System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>📦 Order Management</h2>
+    <p style="color: #666; margin-bottom: 2rem;">
+        Place new customer orders and track order history. The system automatically assigns the best warehouse based on inventory and location.
+    </p>
+</div>
+
+<div class="card">
+    <h2>🛒 Place New Order</h2>
+    <form action="{{ url_for('orders') }}" method="POST" style="max-width: 600px;">
+        <div class="form-group">
+            <label for="customer_name">Customer Name:</label>
+            <input type="text" name="customer_name" id="customer_name" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="customer_email">Customer Email:</label>
+            <input type="email" name="customer_email" id="customer_email" class="form-control" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="customer_address">Delivery Address:</label>
+            <textarea name="customer_address" id="customer_address" class="form-control" rows="3" 
+                      placeholder="Enter complete delivery address..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="product_id">Select Product:</label>
+            <select name="product_id" id="product_id" class="form-control" required>
+                <option value="">Choose a product...</option>
+                {% for product in products %}
+                    <option value="{{ product.id }}">{{ product.name }} - ₹{{ "%.2f"|format(product.price) }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="quantity">Quantity:</label>
+            <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1" required>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Place Order</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>📋 Order History</h2>
+    {% if orders %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Order Date</th>
+                    <th>Customer</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Assigned Warehouse</th>
+                    <th>Status</th>
+                    <th>Total Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <strong>{{ order.customer_name or 'N/A' }}</strong><br>
+                            <small style="color: #666;">{{ order.customer_email or 'N/A' }}</small>
+                        </td>
+                        <td>{{ order.product_name }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>{{ order.warehouse_name or 'N/A' }}</td>
+                        <td>
+                            <span style="padding: 0.25rem 0.5rem; border-radius: 3px; font-size: 0.875rem; 
+                                       background-color: {% if order.status == 'assigned' %}#fff3cd{% elif order.status == 'processing' %}#cce5ff{% elif order.status == 'shipped' %}#d4edda{% else %}#f8d7da{% endif %};
+                                       color: {% if order.status == 'assigned' %}#856404{% elif order.status == 'processing' %}#004085{% elif order.status == 'shipped' %}#155724{% else %}#721c24{% endif %};">
+                                {{ order.status.replace('_', ' ').title() }}
+                            </span>
+                            {% if order.status == 'assigned' %}
+                                <form action="{{ url_for('complete_customer_order', order_id=order.id) }}" method="POST" style="display:inline; margin-left: 0.5rem;">
+                                    <button type="submit" class="btn btn-success" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Complete</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if order.product %}
+                                ₹{{ "%.2f"|format(order.product.price * order.quantity) }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="text-align: center; color: #666; padding: 2rem;">
+            No orders found. Place your first order above!
+        </p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>📊 Order Statistics</h2>
+    <div class="grid">
+        <div class="stats-card">
+            <h3>{{ orders|length }}</h3>
+            <p>Total Orders</p>
+        </div>
+        
+        <div class="stats-card">
+            <h3>
+                {% set customer_orders = orders|selectattr('type', 'equalto', 'customer_order')|list %}
+                {{ customer_orders|length }}
+            </h3>
+            <p>Customer Orders</p>
+        </div>
+        
+        <div class="stats-card">
+            <h3>
+                {% set pending_orders = orders|selectattr('status', 'equalto', 'assigned')|list %}
+                {{ pending_orders|length }}
+            </h3>
+            <p>Pending Orders</p>
+        </div>
+        
+        <div class="stats-card">
+            <h3>
+                {% set completed_orders = orders|selectattr('status', 'equalto', 'shipped')|list %}
+                {{ completed_orders|length }}
+            </h3>
+            <p>Completed Orders</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .order-status {
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .status-assigned {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-processing {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .status-shipped {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
+{% endblock %} 
